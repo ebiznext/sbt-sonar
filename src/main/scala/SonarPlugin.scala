@@ -55,10 +55,13 @@ object SonarPlugin extends Plugin {
 
   object sonar extends Keys {
   	lazy val settings = Seq(ivyConfigurations += Config) ++ SonarDefaults.settings ++ Seq(
+      managedClasspath in sonarPublish <<= (classpathTypes in sonarPublish, update) map { (ct, report) =>
+          Classpaths.managedJars(Config, ct, report)
+      },
   	  sonarPublish := {
         val s: TaskStreams = streams.value
-        val classpath : Seq[File] = update.value.select( configurationFilter(name = Config.name) )
-	    val props = Map.empty[String, String] ++ defaultSonarProperties.value ++ sonarProperties.value ++ Seq(
+        val classpath : Seq[File] = ((managedClasspath in sonarPublish).value).files
+	      val props = Map.empty[String, String] ++ defaultSonarProperties.value ++ sonarProperties.value ++ Seq(
 	    	"sonar.libraries" -> (update.value.select( configurationFilter(name = "*") ) mkString(",")))
         for(d<-(sourceDirectories in Compile).value) IO.createDirectory(d)
         for(d<-(sourceDirectories in Test).value) IO.createDirectory(d)
